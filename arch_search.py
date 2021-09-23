@@ -22,6 +22,7 @@ from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custo
 
 
 parser = argparse.ArgumentParser("cifar")
+parser.add_argument('--name', required=True)
 parser.add_argument('--learning_rate_min', type=float, default=0.001, help='min learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
