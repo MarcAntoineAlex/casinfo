@@ -242,7 +242,7 @@ class Architect(object):
             p.data.sub_(2 * R1, v)
         logits1, _ = self._process_one_batch(unl_data, self.assistant)
         logits2, _ = self._process_one_batch(unl_data, unrolled_model)
-        loss2 = cusloss(logits1, logits2)
+        loss2 = self.criterion(logits1, logits2)
 
         vector_t_dash = torch.autograd.grad(loss2, unrolled_model.W())
         grad_part2 = self._hessian_vector_product(vector_t_dash, trn_data, data_count, r)
@@ -325,7 +325,7 @@ class Architect(object):
 
     def _process_one_batch(self, data, model):
         batch_x = data[0].float().to(self.device)
-        batch_y = data[1].float()
+        batch_y = data[1].float().to(self.device)
 
         batch_x_mark = data[2].float().to(self.device)
         batch_y_mark = data[3].float().to(self.device)
