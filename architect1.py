@@ -51,15 +51,15 @@ class Architect(object):
         logits1, true1 = self._process_one_batch(unl_data, self.assistant)
         loss2 = self.criterion(logits1, l1)
         loss = loss1 + (self.lambda_par * loss2)
-        theta = _concat(self.assistant.parameters()).data
+        theta = _concat(self.assistant.W()).data
         try:
-            moment = _concat(assistant_optimizer.state[v]['momentum_buffer'] for v in self.assistant.parameters()).mul_(
+            moment = _concat(assistant_optimizer.state[v]['momentum_buffer'] for v in self.assistant.W()).mul_(
                 self.network_momentum)
         except:
             print("DANGER 001")
             moment = torch.zeros_like(theta)
         dtheta = _concat(
-            torch.autograd.grad(loss, self.assistant.parameters())).data + self.network_weight_decay * theta
+            torch.autograd.grad(loss, self.assistant.W())).data + self.network_weight_decay * theta
         unrolled_assistant = self._construct_model_from_theta1(theta.sub(eta, moment + dtheta))
         return unrolled_assistant
 
@@ -70,14 +70,14 @@ class Architect(object):
         logits1, true = self._process_one_batch(unl_data, self.student)
         loss2 = self.criterion(logits1, l1)
         loss = loss1 + (self.lambda_par * loss2)
-        theta = _concat(self.student.parameters()).data
+        theta = _concat(self.student.W()).data
         try:
-            moment = _concat(student_optimizer.state[v]['momentum_buffer'] for v in self.student.parameters()).mul_(
+            moment = _concat(student_optimizer.state[v]['momentum_buffer'] for v in self.student.W()).mul_(
                 self.network_momentum)
         except:
             print("DANGER 002")
             moment = torch.zeros_like(theta)
-        dtheta = _concat(torch.autograd.grad(loss, self.student.parameters())).data + self.network_weight_decay * theta
+        dtheta = _concat(torch.autograd.grad(loss, self.student.W())).data + self.network_weight_decay * theta
         unrolled_student = self._construct_model_from_theta2(theta.sub(eta, moment + dtheta))
         return unrolled_student
 
@@ -183,7 +183,7 @@ class Architect(object):
         model_dict = self.assistant.state_dict()
 
         params, offset = {}, 0
-        for k, v in self.assistant.named_parameters():
+        for k, v in self.assistant.named_W():
             v_length = np.prod(v.size())
             params[k] = theta[offset: offset + v_length].view(v.size())
             offset += v_length
@@ -198,7 +198,7 @@ class Architect(object):
         model_dict = self.student.state_dict()
 
         params, offset = {}, 0
-        for k, v in self.student.named_parameters():
+        for k, v in self.student.named_W():
             v_length = np.prod(v.size())
             params[k] = theta[offset: offset + v_length].view(v.size())
             offset += v_length
