@@ -36,11 +36,11 @@ class Architect(object):
         loss = self.critere(pred, true, data_count)
         theta = _concat(self.teacher.parameters()).data
         try:
-            moment = _concat(teacher_optimizer.state[v]['momentum_buffer'] for v in self.teacher.parameters()).mul_(
+            moment = _concat(teacher_optimizer.state[v]['exp_avg'] for v in self.teacher.parameters()).mul_(
                 self.network_momentum)
         except:
             moment = torch.zeros_like(theta)
-        dtheta = _concat(torch.autograd.grad(loss, self.teacher.parameters())).data + self.network_weight_decay * theta
+        dtheta = _concat(torch.autograd.grad(loss, self.teacher.W())).data + self.network_weight_decay * theta
         unrolled_model = self._construct_model_from_theta(theta.sub(eta, moment + dtheta))  # todo : *?
         return unrolled_model
 
@@ -53,7 +53,7 @@ class Architect(object):
         loss = loss1 + (self.lambda_par * loss2)
         theta = _concat(self.assistant.W()).data
         try:
-            moment = _concat(assistant_optimizer.state[v]['momentum_buffer'] for v in self.assistant.W()).mul_(
+            moment = _concat(assistant_optimizer.state[v]['exp_avg'] for v in self.assistant.W()).mul_(
                 self.network_momentum)
         except:
             print("DANGER 001")
@@ -72,7 +72,7 @@ class Architect(object):
         loss = loss1 + (self.lambda_par * loss2)
         theta = _concat(self.student.W()).data
         try:
-            moment = _concat(student_optimizer.state[v]['momentum_buffer'] for v in self.student.W()).mul_(
+            moment = _concat(student_optimizer.state[v]['exp_avg'] for v in self.student.W()).mul_(
                 self.network_momentum)
         except:
             print("DANGER 002")
@@ -170,7 +170,10 @@ class Architect(object):
         params, offset = {}, 0
         for k, v in self.teacher.named_parameters():
             v_length = np.prod(v.size())
-            params[k] = theta[offset: offset + v_length].view(v.size())
+            if 'architect_param123' in k:
+                params[k] = v
+            else:
+                params[k] = theta[offset: offset + v_length].view(v.size())
             offset += v_length
 
         assert offset == len(theta)
