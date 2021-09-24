@@ -104,7 +104,11 @@ parser.add_argument('--ratio', type=float, default=0.5)
 args = parser.parse_args()
 
 args.path = os.path.join('run/search/', os.environ["SLURM_JOBID"])
-args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = args.path
+try:
+    os.makedirs(args.path)
+except FileExistsError:
+    pass
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
