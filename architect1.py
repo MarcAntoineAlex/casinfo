@@ -339,12 +339,12 @@ class Architect(object):
                 if self.args.output_attention:
                     outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                 else:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
         else:
             if self.args.output_attention:
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
-                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
         if self.args.inverse:
             outputs = self.inverse_transform(outputs)
         f_dim = -1 if self.args.features == 'MS' else 0
