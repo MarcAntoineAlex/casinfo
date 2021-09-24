@@ -282,6 +282,7 @@ def test(teacher):
 
 
 def critere(criterion, teacher, pred, true, data_count, reduction='mean'):
+    print(pred.shape, (teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5).shape, true.shape)
     return criterion(pred * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
                           true * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
                           reduction=reduction)
