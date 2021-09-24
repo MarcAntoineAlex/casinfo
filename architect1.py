@@ -28,6 +28,7 @@ class Architect(object):
             crit = nn.MSELoss(reduction=reduction)
             return crit(pred * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
                                   true * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
+        print(pred.shape, true.shape, (self.teacher.arch[data_count:data_count + pred.shape[0]]).shape)
         return self.criterion(pred * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
                                   true * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5)
 
