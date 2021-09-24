@@ -16,7 +16,6 @@ class Informer(nn.Module):
                  output_attention=False, distil=True, mix=True,
                  device=torch.device('cuda:0')):
         super(Informer, self).__init__()
-        self.args = args
         self.pred_len = out_len
         self.attn = attn
         self.output_attention = output_attention
