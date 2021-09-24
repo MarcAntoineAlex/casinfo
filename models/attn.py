@@ -37,38 +37,13 @@ class FullAttention(nn.Module):
 
 
 class ProbAttention(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False, use_cho=False, d_model=None, L_K=None):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False, d_model=None, L_K=None):
         super(ProbAttention, self).__init__()
         self.factor = factor
         self.scale = scale
         self.mask_flag = mask_flag
         self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
-        self.use_cho = use_cho
-        if self.use_cho:
-            self.choice = nn.Sequential(nn.Linear(d_model, L_K),
-                                        nn.Softmax())
-
-    def choose(self, Q, sample_k, K_expand):
-        # B, H, L_Q, D = Q.shape
-        # _, _, L_Q, L_K, E = K_expand.shape
-        # C = self.choice(Q)
-        # S = torch.sort(C)
-        # mask = torch.relu(C - S[:, :, :, -sample_k])
-        # K_masked = K_expand * mask.unsqueeze(-1)
-        # result = torch.matmul(Q.unsqueeze(-2), K_masked.transpose(-2, -1)).squeeze()
-        # target = torch.matmul(Q.unsqueeze(-2), K_expand.transpose(-2, -1)).squeeze()
-        # M_result = torch.log(torch.exp(torch.div(result, D ** 0.5)).sum(-1)) - torch.div(result, D ** 0.5).sum(-1) / L_K
-        # M_target = torch.log(torch.exp(torch.div(target, D ** 0.5)).sum(-1)) - torch.div(target, D ** 0.5).sum(-1) / L_K
-        # loss_func = nn.MSELoss()
-        # loss = loss_func(M_result, M_target)
-        # return loss
-        B, H, L_Q, D = Q.shape
-        _, _, L_Q, L_K, E = K_expand.shape
-        Q_mean = Q.mean(dim=-2)
-        print(Q_mean.unsqueeze(-2).shape, K_expand.transpose(-2, -1).shape)
-        S = torch.matmul(Q_mean.unsqueeze(-2), K_expand.transpose(-2, -1)).squeeze()  # S = [B, H, L_K]
-        return S
 
 
     def _prob_QK(self, Q, K, sample_k, n_top): # n_top: c*ln(L_q)
@@ -79,20 +54,9 @@ class ProbAttention(nn.Module):
         loss = None
         # calculate the sampled Q_K
         K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E)
-        if self.use_cho:
-            # loss = self.choose(Q, sample_k, K_expand)
-            # C = self.choice(Q)
-            # S = torch.sort(C)
-            # mask = torch.relu(C-S[:, :, :, -sample_k]).bool()
-            # K_sample = torch.masked_select(K_expand, mask.unsqueeze(-1)).reshape(B, H, L_Q, sample_k, E)
-            S = self.choose(Q, sample_k, K_expand)
-            K_sample = K_expand[torch.arange(B)[:, None, None, None],
-                                torch.arange(H)[None, :, None, None],
-                                torch.arange(L_Q)[None, :, None, None],
-                                S, :]
-        else:
-            index_sample = torch.randint(L_K, (L_Q, sample_k)) # real U = U_part(factor*ln(L_k))*L_q
-            K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
+
+        index_sample = torch.randint(L_K, (L_Q, sample_k)) # real U = U_part(factor*ln(L_k))*L_q
+        K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
         Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze()  # Q [B, H, Lq, 1, E] * K [B, H, Lq, E, ln(Lk)]
                                                                                           # = [B, H, Lq, 1, ln(Lk)]
 
@@ -212,14 +176,9 @@ class AttentionLayer(nn.Module):
         _, S, _ = keys.shape
         H = self.n_heads
 
-        if self.args is not None:
-            queries = torch.cat([q(queries) for q in self.q_proj], dim=-1).view(B, L, H, -1)
-            keys = torch.cat([k(keys) for k in self.k_proj], dim=-1).view(B, S, H, -1)
-            values = torch.cat([v(values) for v in self.v_proj], dim=-1).view(B, S, H, -1)
-        else:
-            queries = self.query_projection(queries).view(B, L, H, -1)
-            keys = self.key_projection(keys).view(B, S, H, -1)
-            values = self.value_projection(values).view(B, S, H, -1)
+        queries = self.query_projection(queries).view(B, L, H, -1)
+        keys = self.key_projection(keys).view(B, S, H, -1)
+        values = self.value_projection(values).view(B, S, H, -1)
 
         d_model = queries.shape[-1]
         attn_out = self.inner_attention(
@@ -235,12 +194,5 @@ class AttentionLayer(nn.Module):
             out = out.transpose(2,1).contiguous()
         out = out.view(B, L, -1)
 
-        if self.args is not None:
-            w_minus_1 = self.args.world_size - 1
-            L_A = int((d_model * self.args.ratio // w_minus_1) * w_minus_1)
-            result = self.out_projection[0](out[:, :, :d_model-L_A])
-            for i in range(1, self.args.world_size):
-                result += self.out_projection[i](out[:, :, d_model - L_A:])
-            return result, attn,
-        else:
-            return self.out_projection(out), attn
+
+        return self.out_projection(out), attn
