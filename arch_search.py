@@ -188,7 +188,7 @@ def main():
 def train(trn_loader, val_loader, unl_loader, teacher, assistant, student, architect,
           criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch):
     loss_counter = utils.AvgrageMeter()
-    data_zcount = 0
+    data_count = 0
     for step, trn_data in enumerate(trn_loader):
         teacher.train()
 
