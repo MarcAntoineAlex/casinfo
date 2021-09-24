@@ -148,36 +148,37 @@ def main():
     args.detail_freq = args.freq
     args.freq = args.freq[-1:]
 
-    teacher = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
-                     args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
-                     args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                     device).float().cuda()
-    assistant = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
-                       args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
-                       args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                       device).float().cuda()
-    student = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
-                       args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
-                       args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                       device).float().cuda()
-    criterion_t = nn.MSELoss().cuda()
-    criterion_a = nn.MSELoss().cuda()
-    criterion_s = nn.MSELoss().cuda()
-    cus_loss = nn.MSELoss().cuda()
-
-    optimizer_t = torch.optim.Adam(teacher.W(),args.learning_rate)
-    optimizer_a = torch.optim.Adam(assistant.W(),args.learning_rate)
-    optimizer_s = torch.optim.Adam(student.W(),args.learning_rate)
-
-    trn_data, trn_loader = _get_data(flag='train')
-    val_data, val_loader = _get_data(flag='val')
-    unl_data, unl_loader = _get_data(flag='train')
-    test_data, test_loader = _get_data(flag='test')
-
-    architect = Architect(teacher, assistant, student, args, device)
-    early_stopping = EarlyStopping(patience=args.patience, verbose=True)
-
     for i in range(args.itr):
+        teacher = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
+                         args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
+                         args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
+                         device).float().cuda()
+        assistant = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
+                           args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
+                           args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
+                           device).float().cuda()
+        student = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
+                           args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
+                           args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
+                           device).float().cuda()
+        criterion_t = nn.MSELoss().cuda()
+        criterion_a = nn.MSELoss().cuda()
+        criterion_s = nn.MSELoss().cuda()
+        cus_loss = nn.MSELoss().cuda()
+
+        optimizer_t = torch.optim.Adam(teacher.W(),args.learning_rate)
+        optimizer_a = torch.optim.Adam(assistant.W(),args.learning_rate)
+        optimizer_s = torch.optim.Adam(student.W(),args.learning_rate)
+
+        trn_data, trn_loader = _get_data(flag='train')
+        val_data, val_loader = _get_data(flag='val')
+        unl_data, unl_loader = _get_data(flag='train')
+        test_data, test_loader = _get_data(flag='test')
+
+        architect = Architect(teacher, assistant, student, args, device)
+        early_stopping = EarlyStopping(patience=args.patience, verbose=True)
+
+
         for epoch in range(args.epochs):
             logging.info('epoch %d', epoch)
 
@@ -221,7 +222,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        # architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
         loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
