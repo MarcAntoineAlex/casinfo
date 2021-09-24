@@ -191,8 +191,11 @@ def main():
         adjust_learning_rate(optimizer_t, epoch + 1, args)
         adjust_learning_rate(optimizer_a, epoch + 1, args)
         adjust_learning_rate(optimizer_s, epoch + 1, args)
+        if early_stopping.early_stop:
+            print("Early_stopping")
+            break
 
-    best_model_path = args.path + 'checkpoint.pth'
+    best_model_path = args.path + '/' + 'checkpoint.pth'
     teacher.load_state_dict(torch.load(best_model_path))
 
 
