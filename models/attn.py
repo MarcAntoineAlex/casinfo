@@ -37,7 +37,7 @@ class FullAttention(nn.Module):
 
 
 class ProbAttention(nn.Module):
-    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False, d_model=None, L_K=None):
+    def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(ProbAttention, self).__init__()
         self.factor = factor
         self.scale = scale
@@ -45,25 +45,21 @@ class ProbAttention(nn.Module):
         self.output_attention = output_attention
         self.dropout = nn.Dropout(attention_dropout)
 
-
     def _prob_QK(self, Q, K, sample_k, n_top): # n_top: c*ln(L_q)
         # Q [B, H, L, D]
         B, H, L_K, E = K.shape
         _, _, L_Q, D = Q.shape
 
-        loss = None
         # calculate the sampled Q_K
         K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, E)
-
         index_sample = torch.randint(L_K, (L_Q, sample_k)) # real U = U_part(factor*ln(L_k))*L_q
         K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
         Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze()  # Q [B, H, Lq, 1, E] * K [B, H, Lq, E, ln(Lk)]
                                                                                           # = [B, H, Lq, 1, ln(Lk)]
 
-
         # find the Top_k query with sparisty measurement
-        # M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)  # M [B, H, Lq]
-        M = torch.log(torch.exp(torch.div(Q_K_sample, D**0.5)).sum(-1)) - torch.div(Q_K_sample, D**0.5).sum(-1)/L_K
+        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)  # M [B, H, Lq]
+        # M = torch.log(torch.exp(torch.div(Q_K_sample, D**0.5)).sum(-1)) - torch.div(Q_K_sample, D**0.5).sum(-1)/L_K
         M_top = M.topk(n_top, sorted=False)[1]  # M_top [B, H, ln(Lq)] （indice）
 
         # use the reduced Q to calculate Q_K
@@ -72,7 +68,7 @@ class ProbAttention(nn.Module):
                      M_top, :] # factor*ln(L_q)
         Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1)) # factor*ln(L_q)*L_k
 
-        return Q_K, M_top, loss
+        return Q_K, M_top
 
     def _get_initial_context(self, V, L_Q):
         B, H, L_V, D = V.shape
@@ -118,7 +114,7 @@ class ProbAttention(nn.Module):
         U_part = U_part if U_part<L_K else L_K
         u = u if u<L_Q else L_Q
 
-        scores_top, index, loss = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
 
         # add scale factor
         scale = self.scale or 1./sqrt(D)
@@ -134,40 +130,17 @@ class ProbAttention(nn.Module):
 
 class AttentionLayer(nn.Module):
     def __init__(self, attention, d_model, n_heads, 
-                 d_keys=None, d_values=None, mix=False, args=None):
+                 d_keys=None, d_values=None, mix=False):
         super(AttentionLayer, self).__init__()
 
         d_keys = d_keys or (d_model//n_heads)
         d_values = d_values or (d_model//n_heads)
 
         self.inner_attention = attention
-        self.args = args
-        if args is not None:
-            self.q_proj = nn.ModuleList()
-            self.k_proj = nn.ModuleList()
-            self.v_proj = nn.ModuleList()
-            total = d_keys * n_heads
-            w_minus_1 = self.args.world_size - 1
-            L_A = int((d_keys * n_heads * self.args.ratio // w_minus_1) * w_minus_1)
-            print(L_A)
-            self.q_proj.append(nn.Linear(d_model, total - L_A))
-            self.k_proj.append(nn.Linear(d_model, total - L_A))
-            self.v_proj.append(nn.Linear(d_model, total - L_A))
-            for i in range(self.args.world_size-1):
-                self.q_proj.append(nn.Linear(d_model, L_A // w_minus_1))
-                self.k_proj.append(nn.Linear(d_model, L_A // w_minus_1))
-                self.v_proj.append(nn.Linear(d_model, L_A // w_minus_1))
-            self.out_projection = nn.ModuleList()
-            self.out_projection.append(nn.Linear(total - L_A, d_model))
-            for i in range(self.args.world_size-1):
-                self.out_projection.append(nn.Linear(L_A // w_minus_1, d_model))
-            print("TOTAL", total)
-
-        else:
-            self.query_projection = nn.Linear(d_model, d_keys * n_heads)
-            self.key_projection = nn.Linear(d_model, d_keys * n_heads)
-            self.value_projection = nn.Linear(d_model, d_values * n_heads)
-            self.out_projection = nn.Linear(d_values * n_heads, d_model)
+        self.query_projection = nn.Linear(d_model, d_keys * n_heads)
+        self.key_projection = nn.Linear(d_model, d_keys * n_heads)
+        self.value_projection = nn.Linear(d_model, d_values * n_heads)
+        self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
         self.mix = mix
 
@@ -180,19 +153,14 @@ class AttentionLayer(nn.Module):
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
 
-        d_model = queries.shape[-1]
-        attn_out = self.inner_attention(
+        out, attn = self.inner_attention(
             queries,
             keys,
             values,
             attn_mask
         )
-        out = attn_out[0]
-        attn = attn_out[1]
-
         if self.mix:
             out = out.transpose(2,1).contiguous()
         out = out.view(B, L, -1)
-
 
         return self.out_projection(out), attn

@@ -14,13 +14,13 @@ class Informer(nn.Module):
                  factor=5, d_model=512, n_heads=8, e_layers=3, d_layers=2, d_ff=512,
                  dropout=0.0, attn='prob', embed='fixed', freq='h', activation='gelu',
                  output_attention=False, distil=True, mix=True,
-                 device=torch.device('cuda:0'), args=None):
+                 device=torch.device('cuda:0')):
         super(Informer, self).__init__()
         self.args = args
         self.pred_len = out_len
         self.attn = attn
         self.output_attention = output_attention
-        self.args = args
+
         # Encoding
         self.enc_embedding = DataEmbedding(enc_in, d_model, embed, freq, dropout)
         self.dec_embedding = DataEmbedding(dec_in, d_model, embed, freq, dropout)
@@ -30,9 +30,8 @@ class Informer(nn.Module):
         self.encoder = Encoder(
             [
                 EncoderLayer(
-                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention,
-                                        d_model=512, L_K=96),
-                                   d_model, n_heads, mix=False),
+                    AttentionLayer(Attn(False, factor, attention_dropout=dropout, output_attention=output_attention),
+                                d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
                     dropout=dropout,
@@ -50,11 +49,10 @@ class Informer(nn.Module):
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False,
-                                        d_model=512, L_K=96),
-                                   d_model, n_heads, mix=mix),
+                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False),
+                                d_model, n_heads, mix=mix),
                     AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False),
-                                   d_model, n_heads, mix=False),
+                                d_model, n_heads, mix=False),
                     d_model,
                     d_ff,
                     dropout=dropout,
