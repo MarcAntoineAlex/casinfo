@@ -357,12 +357,12 @@ def _process_one_batch(data, model):
             if args.output_attention:
                 outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
-                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
     else:
         if args.output_attention:
             outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
         else:
-            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
     f_dim = -1 if args.features == 'MS' else 0
     batch_y = batch_y[:, -args.pred_len:, f_dim:].cuda()
 
