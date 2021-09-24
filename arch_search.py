@@ -177,30 +177,31 @@ def main():
     architect = Architect(teacher, assistant, student, args, device)
     early_stopping = EarlyStopping(patience=args.patience, verbose=True)
 
+    for i in range(args.itr):
+        for epoch in range(args.epochs):
+            logging.info('epoch %d', epoch)
 
-    for epoch in range(args.epochs):
-        logging.info('epoch %d', epoch)
+            # training
+            train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
+                  criterion_t, criterion_a, criterion_s, cus_loss,
+                  optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i)  # todo: learning_rate ->lr
 
-        # training
-        train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
-              criterion_t, criterion_a, criterion_s, cus_loss,
-              optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping)  # todo: learning_rate ->lr
+            # validation
+            test(teacher)
+            adjust_learning_rate(optimizer_t, epoch + 1, args)
+            adjust_learning_rate(optimizer_a, epoch + 1, args)
+            adjust_learning_rate(optimizer_s, epoch + 1, args)
+            if early_stopping.early_stop:
+                print("Early_stopping")
+                break
 
-        # validation
+        best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
+        teacher.load_state_dict(torch.load(best_model_path))
         test(teacher)
-        adjust_learning_rate(optimizer_t, epoch + 1, args)
-        adjust_learning_rate(optimizer_a, epoch + 1, args)
-        adjust_learning_rate(optimizer_s, epoch + 1, args)
-        if early_stopping.early_stop:
-            print("Early_stopping")
-            break
-
-    best_model_path = args.path + '/' + 'checkpoint.pth'
-    teacher.load_state_dict(torch.load(best_model_path))
 
 
 def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
-          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping):
+          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping, i):
     loss_counter = utils.AvgrageMeter()
     data_count = 0
     for step, trn_data in enumerate(trn_loader):
@@ -267,7 +268,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
     logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f}".format(
         epoch, loss_counter.avg, vali_loss, test_loss))
-    early_stopping(vali_loss, teacher, args.path)
+    early_stopping(vali_loss, teacher, args.path, i)
 
 
 def test(teacher):
