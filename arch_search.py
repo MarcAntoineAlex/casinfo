@@ -4,18 +4,19 @@ import time
 import glob
 import numpy as np
 import torch
-import utils
+import util
 import logging
 import argparse
 import torch.nn as nn
 import torch.utils
+import utils
 import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 
 from torch.autograd import Variable
 from models.model import Informer
-from utils.metrics import metric
+from util.metrics import metric
 from torch.utils.data import DataLoader
 from architect1 import Architect
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
@@ -186,7 +187,7 @@ def main():
 
 def train(trn_loader, val_loader, unl_loader, teacher, assistant, student, architect,
           criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch):
-    loss_counter = utils.AvgrageMeter()
+    loss_counter = util.AvgrageMeter()
     data_count = 0
     for step, trn_data in enumerate(trn_loader):
         teacher.train()

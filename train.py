@@ -4,7 +4,7 @@ import time
 import glob
 import numpy as np
 import torch
-import utils
+import util
 import logging
 import argparse
 import torch.nn as nn
@@ -42,7 +42,7 @@ parser.add_argument('--grad_clip', type=float, default=5, help='gradient clippin
 args = parser.parse_args()
 
 args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
-utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
+util.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -116,13 +116,13 @@ def main():
             best_acc = valid_acc
         logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
 
-    utils.save(model, os.path.join(args.save, 'weights.pt'))
+    util.save(model, os.path.join(args.save, 'weights.pt'))
 
 
 def train(train_queue, model, criterion, optimizer):
-  objs = utils.AvgrageMeter()
-  top1 = utils.AvgrageMeter()
-  top5 = utils.AvgrageMeter()
+  objs = util.AvgrageMeter()
+  top1 = util.AvgrageMeter()
+  top5 = util.AvgrageMeter()
   model.train()
 
   for step, (input, target) in enumerate(train_queue):
@@ -139,7 +139,7 @@ def train(train_queue, model, criterion, optimizer):
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+    prec1, prec5 = util.accuracy(logits, target, topk=(1, 5))
     n = input.size(0)
     objs.update(loss.item(), n)
     top1.update(prec1.item(), n)
@@ -152,9 +152,9 @@ def train(train_queue, model, criterion, optimizer):
 
 
 def infer(valid_queue, model, criterion):
-  objs = utils.AvgrageMeter()
-  top1 = utils.AvgrageMeter()
-  top5 = utils.AvgrageMeter()
+  objs = util.AvgrageMeter()
+  top1 = util.AvgrageMeter()
+  top5 = util.AvgrageMeter()
   model.eval()
 
   for step, (input, target) in enumerate(valid_queue):
@@ -164,7 +164,7 @@ def infer(valid_queue, model, criterion):
     logits, _ = model(input)
     loss = criterion(logits, target)
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+    prec1, prec5 = util.accuracy(logits, target, topk=(1, 5))
     n = input.size(0)
     objs.update(loss.item(), n)
     top1.update(prec1.item(), n)

@@ -18,7 +18,7 @@ import torch.multiprocessing as mp
 import torch.utils.data as data
 
 # informer
-import utils.tools as tools
+import util.tools as tools
 from exp.exp_m import Exp_M_Informer
 
 

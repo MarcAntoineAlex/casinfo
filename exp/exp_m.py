@@ -3,8 +3,8 @@ from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 from models.architect import Architect
 
-from utils.tools import EarlyStopping, adjust_learning_rate, AverageMeter
-from utils.metrics import metric
+from util.tools import EarlyStopping, adjust_learning_rate, AverageMeter
+from util.metrics import metric
 
 import numpy as np
 

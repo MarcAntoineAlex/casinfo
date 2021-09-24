@@ -12,7 +12,7 @@ import torchvision
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 import argparse
-from utils.config import MInformerConfig
+from util.config import MInformerConfig
 
 def adjust_learning_rate(optimizer, epoch, args):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))

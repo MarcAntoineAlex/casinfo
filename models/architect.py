@@ -3,9 +3,9 @@ import copy
 
 import torch
 import torch.nn as nn
-from utils.tools import broadcast_coalesced, all_reduce_coalesced
+from util.tools import broadcast_coalesced, all_reduce_coalesced
 import torch.distributed as dist
-import utils.tools as tools
+import util.tools as tools
 
 class Architect():
     """ Compute gradients of alphas """
