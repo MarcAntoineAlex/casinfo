@@ -20,7 +20,7 @@ from util.metrics import metric
 from torch.utils.data import DataLoader
 from architect1 import Architect
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
-from util.tools import EarlyStopping
+from util.tools import EarlyStopping, adjust_learning_rate
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -165,40 +165,41 @@ def main():
     criterion_s = nn.MSELoss().cuda()
     cus_loss = nn.MSELoss().cuda()
 
-    optimizer_t = torch.optim.SGD(teacher.W(),args.learning_rate,momentum=args.momentum,weight_decay=args.weight_decay)
-    optimizer_a = torch.optim.SGD(assistant.W(),args.learning_rate,momentum=args.momentum,weight_decay=args.weight_decay)
-    optimizer_s = torch.optim.SGD(student.W(),args.learning_rate,momentum=args.momentum,weight_decay=args.weight_decay)
+    optimizer_t = torch.optim.Adam(teacher.W(),args.learning_rate)
+    optimizer_a = torch.optim.Adam(assistant.W(),args.learning_rate)
+    optimizer_s = torch.optim.Adam(student.W(),args.learning_rate)
 
     trn_data, trn_loader = _get_data(flag='train')
     val_data, val_loader = _get_data(flag='val')
     unl_data, unl_loader = _get_data(flag='train')
     test_data, test_loader = _get_data(flag='test')
 
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_t, args.epochs, eta_min=args.learning_rate_min)
     architect = Architect(teacher, assistant, student, args, device)
+    early_stopping = EarlyStopping(patience=args.patience, verbose=True)
+
 
     for epoch in range(args.epochs):
-        scheduler.step()
-        lr = scheduler.get_lr()[0]  # todo: change to adjust_learning_rate
-        logging.info('epoch %d lr %e', epoch, lr)
+        logging.info('epoch %d', epoch)
 
         # training
         train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
               criterion_t, criterion_a, criterion_s, cus_loss,
-              optimizer_t, optimizer_a, optimizer_s, lr, epoch)
+              optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping)
 
         # validation
         test(teacher)
+        adjust_learning_rate(optimizer_t, epoch + 1, args)
+        adjust_learning_rate(optimizer_a, epoch + 1, args)
+        adjust_learning_rate(optimizer_s, epoch + 1, args)
 
     best_model_path = args.path + 'checkpoint.pth'
     teacher.load_state_dict(torch.load(best_model_path))
 
 
 def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
-          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch):
+          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping):
     loss_counter = utils.AvgrageMeter()
     data_count = 0
-    early_stopping = EarlyStopping(patience=args.patience, verbose=True)
     for step, trn_data in enumerate(trn_loader):
         teacher.train()
 
@@ -221,7 +222,6 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         logit_t, true = _process_one_batch(trn_data, teacher)
         loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
         loss_t.backward()
-        nn.utils.clip_grad_norm(teacher.parameters(), args.grad_clip)
         optimizer_t.step()
     
         ##########################################################################################################
@@ -311,10 +311,10 @@ def vali(vali_loader, criterion, model):
 def critere(criterion, teacher, pred, true, data_count, reduction='mean'):
     if reduction != 'mean':
         crit = nn.MSELoss(reduction=reduction)
-        return crit(pred * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
-                    true * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
-    return criterion(pred * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
-                          true * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5)
+        return crit(pred * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
+                    true * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
+    return criterion(pred * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
+                     true * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5)
 
 
 def _get_data(flag):

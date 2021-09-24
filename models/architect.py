@@ -31,8 +31,8 @@ class Architect():
             self.inverse_transform = inverse_transform
 
     def critere(self, pred, true, data_count, reduction='mean'):
-        return self.criterion(pred * self.net.arch[data_count:data_count + self.args.batch_size] ** 0.5,
-                              true * self.net.arch[data_count:data_count + self.args.batch_size] ** 0.5,
+        return self.criterion(pred * self.net.architect_param123[data_count:data_count + self.args.batch_size] ** 0.5,
+                              true * self.net.architect_param123[data_count:data_count + self.args.batch_size] ** 0.5,
                               reduction=reduction)
 
     def virtual_step(self, trn_data, next_data, xi, w_optim, data_count):

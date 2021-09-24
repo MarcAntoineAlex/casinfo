@@ -26,10 +26,10 @@ class Architect(object):
     def critere(self, pred, true, data_count, reduction='mean'):
         if reduction != 'mean':
             crit = nn.MSELoss(reduction=reduction)
-            return crit(pred * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
-                                  true * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
-        return self.criterion(pred * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
-                                  true * self.teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5)
+            return crit(pred * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
+                        true * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
+        return self.criterion(pred * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
+                              true * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5)
 
     def _compute_unrolled_model(self, input_data, eta, teacher_optimizer, data_count):
         pred, true = self._process_one_batch(input_data, self.teacher)

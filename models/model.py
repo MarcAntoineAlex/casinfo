@@ -67,7 +67,7 @@ class Informer(nn.Module):
         # self.end_conv1 = nn.Conv1d(in_channels=label_len+out_len, out_channels=out_len, kernel_size=1, bias=True)
         # self.end_conv2 = nn.Conv1d(in_channels=d_model, out_channels=c_out, kernel_size=1, bias=True)
         self.projection = nn.Linear(d_model, c_out, bias=True)
-        self.arch = torch.nn.Parameter(torch.ones(8512, 1, 1))
+        self.architect_param123 = torch.nn.Parameter(torch.ones(8512, 1, 1))
         self.device = device
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec,
@@ -97,19 +97,19 @@ class Informer(nn.Module):
 
     def A(self):
         for n, p in self.named_parameters():
-            if 'arch' in n:
+            if 'architect_param123' in n:
                 yield p
 
     def W(self):
         for n, p in self.named_parameters():
-            if 'arch' in n:
+            if 'architect_param123' in n:
                 pass
             else:
                 yield p
 
     def named_W(self):
         for n, p in self.named_parameters():
-            if 'arch' in n:
+            if 'architect_param123' in n:
                 pass
             else:
                 yield n, p
