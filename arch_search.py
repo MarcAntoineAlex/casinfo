@@ -20,6 +20,7 @@ from util.metrics import metric
 from torch.utils.data import DataLoader
 from architect1 import Architect
 from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
+from util.tools import EarlyStopping
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -166,29 +167,33 @@ def main():
     trn_data, trn_loader = _get_data(flag='train')
     val_data, val_loader = _get_data(flag='val')
     unl_data, unl_loader = _get_data(flag='train')
+    test_data, test_loader = _get_data(flag='test')
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_t, args.epochs, eta_min=args.learning_rate_min)
     architect = Architect(teacher, assistant, student, args, device)
 
     for epoch in range(args.epochs):
         scheduler.step()
-        lr = scheduler.get_lr()[0]
+        lr = scheduler.get_lr()[0]  # todo: change to adjust_learning_rate
         logging.info('epoch %d lr %e', epoch, lr)
 
         # training
-        trn_loss_avg = train(trn_loader, val_loader, unl_loader, teacher, assistant, student, architect,
-                             criterion_t, criterion_a, criterion_s, cus_loss,
-                             optimizer_t, optimizer_a, optimizer_s, lr, epoch)
+        train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
+              criterion_t, criterion_a, criterion_s, cus_loss,
+              optimizer_t, optimizer_a, optimizer_s, lr, epoch)
+
         # validation
         test(teacher)
+
     best_model_path = args.path + 'checkpoint.pth'
     teacher.load_state_dict(torch.load(best_model_path))
 
 
-def train(trn_loader, val_loader, unl_loader, teacher, assistant, student, architect,
+def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
           criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch):
     loss_counter = utils.AvgrageMeter()
     data_count = 0
+    early_stopping = EarlyStopping(patience=args.patience, verbose=True)
     for step, trn_data in enumerate(trn_loader):
         teacher.train()
 
@@ -248,7 +253,13 @@ def train(trn_loader, val_loader, unl_loader, teacher, assistant, student, archi
             logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss_t.item()))
             loss_counter.update(loss_t.item())
         data_count += args.batch_size
-    return loss_counter.avg()
+
+    vali_loss = vali(val_loader, criterion_t, teacher)
+    test_loss = vali(test_loader, criterion_t, teacher)
+
+    logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f}".format(
+        epoch, loss_counter.avg, vali_loss, test_loss))
+    early_stopping(vali_loss, teacher, args.path)
 
 
 def test(teacher):
@@ -281,6 +292,18 @@ def test(teacher):
     return
 
 
+def vali(vali_loader, criterion, model):
+    model.eval()
+    total_loss = []
+    for i, val_d in enumerate(vali_loader):
+        pred, true = _process_one_batch(val_d, model)
+        loss = criterion(pred.detach().cpu(), true.detach().cpu())
+        total_loss.append(loss)
+    total_loss = np.average(total_loss)
+    model.train()
+    return total_loss
+
+
 def critere(criterion, teacher, pred, true, data_count, reduction='mean'):
     if reduction != 'mean':
         crit = nn.MSELoss(reduction=reduction)
@@ -288,6 +311,8 @@ def critere(criterion, teacher, pred, true, data_count, reduction='mean'):
                     true * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
     return criterion(pred * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5,
                           true * teacher.arch[data_count:data_count + pred.shape[0]] ** 0.5)
+
+
 def _get_data(flag):
     data_dict = {
         'ETTh1': Dataset_ETT_hour,
