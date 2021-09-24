@@ -275,8 +275,7 @@ def test(teacher):
     trues = []
 
     for i, test_d in enumerate(test_loader):
-        pred, true = _process_one_batch(
-            test_data, test_d)
+        pred, true = _process_one_batch(test_d, teacher)
         preds.append(pred.detach().cpu().numpy())
         trues.append(true.detach().cpu().numpy())
 
