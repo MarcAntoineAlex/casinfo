@@ -152,15 +152,15 @@ def main():
         teacher = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
                          args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
                          args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                         device).float().cuda()
+                         device, args).float().cuda()
         assistant = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
                            args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
                            args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                           device).float().cuda()
+                           device, args).float().cuda()
         student = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
                            args.d_model, args.n_heads, args.e_layers, args.d_layers, args.d_ff, args.dropout, args.attn,
                            args.embed, args.freq, args.activation, args.output_attention, args.distil, args.mix,
-                           device).float().cuda()
+                           device, args).float().cuda()
         criterion_t = nn.MSELoss().cuda()
         criterion_a = nn.MSELoss().cuda()
         criterion_s = nn.MSELoss().cuda()
