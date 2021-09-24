@@ -103,6 +103,7 @@ parser.add_argument('--max_hessian_grad_norm', type=float, default=1)
 parser.add_argument('--ratio', type=float, default=0.5)
 args = parser.parse_args()
 
+args.path = os.path.join('run/search/', os.environ["SLURM_JOBID"])
 args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 log_format = '%(asctime)s %(message)s'
