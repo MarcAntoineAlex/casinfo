@@ -184,7 +184,7 @@ def main():
         # training
         train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
               criterion_t, criterion_a, criterion_s, cus_loss,
-              optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping)
+              optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping)  # todo: learning_rate ->lr
 
         # validation
         test(teacher)
