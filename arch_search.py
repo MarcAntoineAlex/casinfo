@@ -216,7 +216,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        # architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
         loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
@@ -226,31 +226,31 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
     
         ##########################################################################################################
     
-        optimizer_a.zero_grad()
-        logit_t, _ = _process_one_batch(unl_data, teacher)
-        logit_a, _ = _process_one_batch(unl_data, assistant)
-        loss_a1 = cus_loss(logit_a, logit_t)
-
-        logit_a, true = _process_one_batch(trn_data, assistant)
-        loss_a2 = criterion_a(logit_a, true)
-
-        loss_a = loss_a1 + args.lambda_par * loss_a2
-        loss_a.backward()
-        optimizer_a.step()
+        # optimizer_a.zero_grad()
+        # logit_t, _ = _process_one_batch(unl_data, teacher)
+        # logit_a, _ = _process_one_batch(unl_data, assistant)
+        # loss_a1 = cus_loss(logit_a, logit_t)
+        #
+        # logit_a, true = _process_one_batch(trn_data, assistant)
+        # loss_a2 = criterion_a(logit_a, true)
+        #
+        # loss_a = loss_a1 + args.lambda_par * loss_a2
+        # loss_a.backward()
+        # optimizer_a.step()
 
         ##########################################################################################################
 
-        optimizer_s.zero_grad()
-        logit_a, true = _process_one_batch(unl_data, assistant)
-        logit_s, true = _process_one_batch(unl_data, student)
-        loss_s1 = cus_loss(logit_s, logit_a.detach())
-
-        logit_s, true = _process_one_batch(trn_data, student)
-        loss_s2 = criterion_s(logit_s, true)
-
-        loss_s = loss_s1 + args.lambda_par * loss_s2
-        loss_s.backward()
-        optimizer_s.step()
+        # optimizer_s.zero_grad()
+        # logit_a, true = _process_one_batch(unl_data, assistant)
+        # logit_s, true = _process_one_batch(unl_data, student)
+        # loss_s1 = cus_loss(logit_s, logit_a.detach())
+        #
+        # logit_s, true = _process_one_batch(trn_data, student)
+        # loss_s2 = criterion_s(logit_s, true)
+        #
+        # loss_s = loss_s1 + args.lambda_par * loss_s2
+        # loss_s.backward()
+        # optimizer_s.step()
 
         ##########################################################################################################
 
