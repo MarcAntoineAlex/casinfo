@@ -94,6 +94,11 @@ class Informer(nn.Module):
             x.data.copy_(y.data)
         return model_new
 
+    def A(self):
+        for n, p in self.named_parameters():
+            if 'arch' in n:
+                yield p
+
     def W(self):
         for n, p in self.named_parameters():
             if 'arch' in n:
