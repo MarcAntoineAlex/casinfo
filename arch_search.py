@@ -195,6 +195,8 @@ def main():
             if early_stopping.early_stop:
                 print("Early_stopping")
                 break
+        print(teacher.arch)
+        print(teacher.arch.mean())
 
         best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
         teacher.load_state_dict(torch.load(best_model_path))
