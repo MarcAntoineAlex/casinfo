@@ -24,12 +24,11 @@ class Architect(object):
                                           weight_decay=args.arch_weight_decay)
 
     def critere(self, pred, true, data_count, reduction='mean'):
+        reweighting = torch.softmax(self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5, dim=0)
         if reduction != 'mean':
             crit = nn.MSELoss(reduction=reduction)
-            return crit(pred * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
-                        true * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
-        return self.criterion(pred * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
-                              true * self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5)
+            return crit(pred * reweighting, true * reweighting).mean(dim=-1)
+        return self.criterion(pred * reweighting, true * reweighting)
 
     def _compute_unrolled_model(self, input_data, eta, teacher_optimizer, data_count):
         pred, true = self._process_one_batch(input_data, self.teacher)
