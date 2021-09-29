@@ -316,12 +316,11 @@ def vali(vali_loader, criterion, model):
 
 
 def critere(criterion, teacher, pred, true, data_count, reduction='mean'):
+    reweighting = torch.softmax(teacher.architect_param123[data_count:data_count + pred.shape[0]]**0.5)
     if reduction != 'mean':
         crit = nn.MSELoss(reduction=reduction)
-        return crit(pred * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
-                    true * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5).mean(dim=-1)
-    return criterion(pred * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5,
-                     true * teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5)
+        return crit(pred * reweighting, true * reweighting).mean(dim=-1)
+    return criterion(pred * reweighting, true * reweighting)
 
 
 def _get_data(flag):
