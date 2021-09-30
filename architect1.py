@@ -24,7 +24,7 @@ class Architect(object):
                                           weight_decay=args.arch_weight_decay)
 
     def critere(self, pred, true, data_count, reduction='mean'):
-        reweighting = torch.softmax(self.teacher.architect_param123[data_count:data_count + pred.shape[0]] ** 0.5, dim=0)
+        reweighting = torch.softmax(self.teacher.architect_param123[data_count:data_count + pred.shape[0]], dim=0) ** 0.5
         if reduction != 'mean':
             crit = nn.MSELoss(reduction=reduction)
             return crit(pred * reweighting, true * reweighting).mean(dim=-1)
