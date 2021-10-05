@@ -95,12 +95,6 @@ parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple g
 parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
 # other settings
-parser.add_argument('--w_momentum', type=float, default=0.9)
-parser.add_argument('--w_weight_decay', type=float, default=3e-4)
-parser.add_argument('--A_lr', type=float, default=0.1)
-parser.add_argument('--A_weight_decay', type=float, default=3e-4)
-parser.add_argument('--max_hessian_grad_norm', type=float, default=1)
-parser.add_argument('--ratio', type=float, default=0.5)
 args = parser.parse_args()
 
 args.path = os.path.join('run/search/', os.environ["SLURM_JOBID"])
@@ -225,6 +219,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_data = next(unl_iter)
 
         architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
         loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
