@@ -36,7 +36,7 @@ parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=2, help='random seed')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--unrolled', action='store_true', default=True, help='use one-step unrolled validation loss')
-parser.add_argument('--arch_learning_rate', type=float, default=0.01, help='learning rate for arch encoding')
+parser.add_argument('--arch_learning_rate', type=float, default=0.1, help='learning rate for arch encoding')
 parser.add_argument('--arch_weight_decay', type=float, default=0, help='weight decay for arch encoding')
 parser.add_argument('--lambda_par', type=float, default=1.0, help='unlabeled ratio')
 
