@@ -55,7 +55,6 @@ class Architect(object):
             moment = _concat(assistant_optimizer.state[v]['exp_avg'] for v in self.assistant.W()).mul_(
                 self.network_momentum)
         except:
-            print("DANGER 001")
             moment = torch.zeros_like(theta)
         dtheta = _concat(
             torch.autograd.grad(loss, self.assistant.W())).data + self.network_weight_decay * theta
@@ -74,7 +73,6 @@ class Architect(object):
             moment = _concat(student_optimizer.state[v]['exp_avg'] for v in self.student.W()).mul_(
                 self.network_momentum)
         except:
-            print("DANGER 002")
             moment = torch.zeros_like(theta)
         dtheta = _concat(torch.autograd.grad(loss, self.student.W())).data + self.network_weight_decay * theta
         unrolled_student = self._construct_model_from_theta2(theta.sub(eta, moment + dtheta))
