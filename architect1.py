@@ -134,8 +134,9 @@ class Architect(object):
         ig3 = self.step2(trn_data, val_data, unl_data, eta, teacher_optimizer,
                          assistant_optimizer, student_optimizer, unrolled, data_count)
         # print('ig1', ig1, ig1[0].mean(), 'ig2', ig2, ig2[0].mean(), 'ig3', ig3, ig3[0].mean())
-        print(self.teacher.architect_param123[:16])
+        print(self.teacher.architect_param123[:2])
         implicit_grads = [(x + y + z) for x, y, z in zip(ig1, ig2, ig3)]
+        print(implicit_grads[0][:2])
 
         for v, g in zip(self.teacher.A(), implicit_grads):
             if v.grad is None:
