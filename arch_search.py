@@ -285,7 +285,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
     logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} Assis_val Loss: {:.7f} Stud_val Loss: {:.7f}".format(
         epoch, loss_counter.avg, vali_loss, test_loss, vali_loss_a, vali_loss_s))
-    early_stopping(vali_loss, teacher, args.path, i)
+    early_stopping(vali_loss_s, student, args.path, i) # todo: check teacher or student
 
 
 def test(teacher, message=''):
