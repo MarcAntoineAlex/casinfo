@@ -26,7 +26,6 @@ from util.tools import EarlyStopping, adjust_learning_rate
 
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--name', required=True)
-parser.add_argument('--learning_rate_min', type=float, default=0.001, help='min learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
 parser.add_argument('--report_freq', type=float, default=20, help='report frequency')
@@ -234,7 +233,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
 
-        STAT_arch_grad.append(implicit_grads.mean().items())
+        STAT_arch_grad.append(implicit_grads[0].mean().items())
         STAT_arch.append(teacher.architect_param123.mean().items())
         STAT_arch_std.append(teacher.architect_param123.std().items())
 
