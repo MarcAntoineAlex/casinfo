@@ -185,9 +185,9 @@ def main():
                   optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i, STAT_arch, STAT_arch_grad, STAT_arch_std)  # todo: learning_rate ->lr
 
             # validation
-            test(teacher)
-            test(assistant)
-            test(student)
+            test(teacher, 'teacher')
+            test(assistant, 'assistant')
+            test(student, 'student')
             adjust_learning_rate(optimizer_t, epoch + 1, args)
             adjust_learning_rate(optimizer_a, epoch + 1, args)
             adjust_learning_rate(optimizer_s, epoch + 1, args)
@@ -288,7 +288,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
     early_stopping(vali_loss, teacher, args.path, i)
 
 
-def test(teacher):
+def test(teacher, message=''):
     test_data, test_loader = _get_data(flag='test')
     teacher.eval()
 
@@ -310,7 +310,7 @@ def test(teacher):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     mae, mse, rmse, mape, mspe = metric(preds, trues)
-    logging.info('mse:{}, mae:{}'.format(mse, mae))
+    logging.info(message + 'mse:{}, mae:{}'.format(mse, mae))
     np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
     np.save(folder_path + 'pred.npy', preds)
     np.save(folder_path + 'true.npy', trues)
