@@ -10,6 +10,7 @@ import argparse
 import torch.nn as nn
 import torch.utils
 import utils
+from matplotlib import pyplot as plt
 import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
@@ -172,6 +173,9 @@ def main():
         architect = Architect(teacher, assistant, student, args, device)
         early_stopping = EarlyStopping(patience=args.patience, verbose=True)
 
+        STAT_arch = []
+        STAT_arch_grad = []
+        STAT_arch_std = []
 
         for epoch in range(args.epochs):
             logging.info('epoch %d', epoch)
@@ -179,18 +183,27 @@ def main():
             # training
             train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
                   criterion_t, criterion_a, criterion_s, cus_loss,
-                  optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i)  # todo: learning_rate ->lr
+                  optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i, STAT_arch, STAT_arch_grad, STAT_arch_std)  # todo: learning_rate ->lr
 
             # validation
             test(teacher)
+            test(assistant)
+            test(student)
             adjust_learning_rate(optimizer_t, epoch + 1, args)
             adjust_learning_rate(optimizer_a, epoch + 1, args)
             adjust_learning_rate(optimizer_s, epoch + 1, args)
             if early_stopping.early_stop:
                 print("Early_stopping")
                 break
-            print(teacher.architect_param123)
-            print(teacher.architect_param123.mean())
+
+        plt.figure()
+        plt.subplot(221)
+        plt.plot(STAT_arch)
+        plt.subplot(222)
+        plt.plot(STAT_arch_grad)
+        plt.subplot(223)
+        plt.plot(STAT_arch_std)
+        plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
 
         best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
         teacher.load_state_dict(torch.load(best_model_path))
@@ -198,7 +211,8 @@ def main():
 
 
 def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
-          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping, i):
+          criterion_t, criterion_a, criterion_s, cus_loss, optimizer_t, optimizer_a, optimizer_s, lr, epoch, early_stopping, i,
+          STAT_arch, STAT_arch_grad, STAT_arch_std):
     loss_counter = utils.AvgrageMeter()
     data_count = 0
     for step, trn_data in enumerate(trn_loader):
@@ -218,7 +232,11 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+
+        STAT_arch_grad.append(implicit_grads.mean().items())
+        STAT_arch.append(teacher.architect_param123.mean().items())
+        STAT_arch_std.append(teacher.architect_param123.std().items())
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
@@ -262,10 +280,12 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         data_count += args.batch_size
 
     vali_loss = vali(val_loader, criterion_t, teacher)
+    vali_loss_a = vali(val_loader, criterion_a, assistant)
+    vali_loss_s = vali(val_loader, criterion_s, student)
     test_loss = vali(test_loader, criterion_t, teacher)
 
-    logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f}".format(
-        epoch, loss_counter.avg, vali_loss, test_loss))
+    logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} Assis_val Loss: {:.7f} Stud_val Loss: {:.7f}".format(
+        epoch, loss_counter.avg, vali_loss, test_loss, vali_loss_a, vali_loss_s))
     early_stopping(vali_loss, teacher, args.path, i)
 
 

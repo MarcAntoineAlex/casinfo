@@ -143,6 +143,7 @@ class Architect(object):
                 v.grad.data.copy_(g.data)
 
         self.optimizer.step()
+        return implicit_grads
 
     def _backward_step(self, val_data, data_count):
         pred, true = self._process_one_batch(val_data, self.teacher)
