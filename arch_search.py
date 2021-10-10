@@ -185,9 +185,10 @@ def main():
                   optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i, STAT_arch, STAT_arch_grad, STAT_arch_std)  # todo: learning_rate ->lr
 
             # validation
+            test(student, 'student')
             test(teacher, 'teacher')
             test(assistant, 'assistant')
-            test(student, 'student')
+
             adjust_learning_rate(optimizer_t, epoch + 1, args)
             adjust_learning_rate(optimizer_a, epoch + 1, args)
             adjust_learning_rate(optimizer_s, epoch + 1, args)
