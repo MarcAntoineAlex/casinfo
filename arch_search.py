@@ -295,8 +295,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
-        loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
-        # loss_t = criterion_t(logit_t, true)
+        # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
+        loss_t = criterion_t(logit_t, true)
         loss_t.backward()
         optimizer_t.step()
 
@@ -304,6 +304,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_a.zero_grad()
         logit_t, _ = _process_one_batch(unl_data, teacher)
+        logit_t.require_grad = False
         logit_a, _ = _process_one_batch(unl_data, assistant)
         loss_a1 = cus_loss(logit_a, logit_t)
 
@@ -318,6 +319,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_s.zero_grad()
         logit_a, true = _process_one_batch(unl_data, assistant)
+        logit_a.require_grad = False
         logit_s, true = _process_one_batch(unl_data, student)
         loss_s1 = cus_loss(logit_s, logit_a.detach())
 
