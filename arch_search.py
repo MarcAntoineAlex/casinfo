@@ -232,7 +232,11 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        with torch.no_grad():
+            assistant.architect_param123 = teacher.architect_param123
+            student.architect_param123 = teacher.architect_param123
+
 
         # STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
@@ -295,8 +299,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
-        # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
-        loss_t = criterion_t(logit_t, true)
+        loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
+        # loss_t = criterion_t(logit_t, true)
         loss_t.backward()
         optimizer_t.step()
 
@@ -309,8 +313,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         loss_a1 = cus_loss(logit_a, logit_t)
 
         logit_a, true = _process_one_batch(trn_data, assistant)
-        loss_a2 = criterion_a(logit_a, true)
-
+        # loss_a2 = criterion_a(logit_a, true)
+        loss_a2 = critere(criterion_a, assistant, logit_a, true, data_count)
         loss_a = loss_a1 + args.lambda_par * loss_a2
         loss_a.backward()
         optimizer_a.step()
@@ -324,7 +328,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         loss_s1 = cus_loss(logit_s, logit_a.detach())
 
         logit_s, true = _process_one_batch(trn_data, student)
-        loss_s2 = criterion_s(logit_s, true)
+        # loss_s2 = criterion_s(logit_s, true)
+        loss_s2 = critere(criterion_s, student, logit_s, true, data_count)
 
         loss_s = loss_s1 + args.lambda_par * loss_s2
         loss_s.backward()
@@ -344,7 +349,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
     logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} Assis_val Loss: {:.7f} Stud_val Loss: {:.7f}".format(
         epoch, loss_counter.avg, vali_loss, test_loss, vali_loss_a, vali_loss_s))
-    early_stopping(vali_loss_s, student, args.path, i) # todo: check teacher or student
+    early_stopping(vali_loss_s, student, args.path, i)  # todo: check teacher or student
 
 
 def test(teacher, message=''):
