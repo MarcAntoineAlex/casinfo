@@ -265,31 +265,31 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             if loss1 <= loss3:
                 loss1.backward()
                 optimizer_t.step()
-                (loss2 + args.lambda_par * loss12).backward()
+                (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_tu, requires_grad=False))).backward()
                 optimizer_a.step()
-                (loss3 + args.lambda_par * loss13).backward()
+                (loss3 + args.lambda_par * cus_loss(logit_su, torch.tensor(logit_tu, requires_grad=False))).backward()
                 optimizer_s.step()
             else:
                 loss3.backward()
                 optimizer_s.step()
-                (loss1 + args.lambda_par * loss13).backward()
+                (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_su, requires_grad=False))).backward()
                 optimizer_t.step()
-                (loss2 + args.lambda_par * loss23).backward()
+                (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_su, requires_grad=False))).backward()
                 optimizer_a.step()
         else:
             if loss2 <= loss3:
                 loss2.backward()
                 optimizer_a.step()
-                (loss1 + args.lambda_par * loss12).backward()
+                (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_au, requires_grad=False))).backward()
                 optimizer_t.step()
-                (loss3 + args.lambda_par * loss23).backward()
+                (loss3 + args.lambda_par * cus_loss(logit_su, torch.tensor(logit_au, requires_grad=False))).backward()
                 optimizer_s.step()
             else:
                 loss3.backward()
                 optimizer_s.step()
-                (loss1 + args.lambda_par * loss13).backward()
+                (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_su, requires_grad=False))).backward()
                 optimizer_t.step()
-                (loss2 + args.lambda_par * loss23).backward()
+                (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_su, requires_grad=False))).backward()
                 optimizer_a.step()
 
 
