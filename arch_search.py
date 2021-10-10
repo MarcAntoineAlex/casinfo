@@ -331,8 +331,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         ##########################################################################################################
 
         if step % args.report_freq == 0:
-            logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss1.item()))
-            loss_counter.update(loss1.item())
+            logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss_t.item()))
+            loss_counter.update(loss_t.item())
         data_count += args.batch_size
 
     vali_loss = vali(val_loader, criterion_t, teacher)
