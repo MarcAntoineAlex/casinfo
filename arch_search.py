@@ -295,8 +295,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
-        # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
-        loss_t = criterion_t(logit_t, true)
+        loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
+        # loss_t = criterion_t(logit_t, true)
         loss_t.backward()
         optimizer_t.step()
 
