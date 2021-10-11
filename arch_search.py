@@ -207,7 +207,7 @@ def main():
         plt.plot(STAT_arch_std)
         plt.title('arch_parameters std')
         plt.subplot(224)
-        plt.plot(teacher.architect_param123.squeeze())
+        plt.plot(teacher.architect_param123.squeeze().cpu())
         plt.title('arch parameters')
         plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
 
