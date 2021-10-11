@@ -199,10 +199,13 @@ def main():
         plt.figure()
         plt.subplot(221)
         plt.plot(STAT_arch)
+        plt.title('arch_parameters mean')
         plt.subplot(222)
         plt.plot(STAT_arch_grad)
+        plt.title('arch_parameters gradient mean')
         plt.subplot(223)
         plt.plot(STAT_arch_std)
+        plt.title('arch_parameters std')
         plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
 
         best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
