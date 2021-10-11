@@ -160,9 +160,9 @@ def main():
         criterion_s = nn.MSELoss().cuda()
         cus_loss = nn.MSELoss().cuda()
 
-        optimizer_t = torch.optim.Adam(teacher.W(),args.learning_rate)
-        optimizer_a = torch.optim.Adam(assistant.W(),args.learning_rate)
-        optimizer_s = torch.optim.Adam(student.W(),args.learning_rate)
+        optimizer_t = torch.optim.Adam(teacher.W(), args.learning_rate)
+        optimizer_a = torch.optim.Adam(assistant.W(), args.learning_rate)
+        optimizer_s = torch.optim.Adam(student.W(), args.learning_rate)
 
         trn_data, trn_loader = _get_data(flag='train')
         val_data, val_loader = _get_data(flag='val')
@@ -206,6 +206,9 @@ def main():
         plt.subplot(223)
         plt.plot(STAT_arch_std)
         plt.title('arch_parameters std')
+        plt.subplot(224)
+        plt.plot(teacher.architect_param123.squeeze())
+        plt.title('arch parameters')
         plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
 
         best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
