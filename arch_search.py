@@ -299,10 +299,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
-        loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
+        loss_t1 = critere(criterion_t, teacher, logit_t, true, data_count)
         # loss_t = criterion_t(logit_t, true)
-        loss_t.backward()
-        optimizer_t.step()
+
 
         ##########################################################################################################
 
@@ -335,6 +334,14 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         optimizer_s.step()
 
         ##########################################################################################################
+
+        logit_s, true = _process_one_batch(unl_data, student)
+        logit_s.require_grad = False
+        logit_t, true = _process_one_batch(unl_data, teacher)
+        loss_t2 = cus_loss(logit_t, logit_s.detach())
+        loss_t = loss_t1 + loss_t2
+        loss_t.backward()
+        optimizer_t.step()
 
         if step % args.report_freq == 0:
             logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss_t.item()))
