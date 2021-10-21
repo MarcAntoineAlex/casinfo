@@ -320,13 +320,13 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         loss_a2 = criterion_a(logit_a, true)
 
         loss_a = loss_a1 + args.lambda_par * loss_a2
-        loss_a2.backward()
+        loss_a.backward()
         optimizer_a.step()
 
         ##########################################################################################################
 
         optimizer_s.zero_grad()
-        logit_a, true = _process_one_batch(unl_data, teacher)
+        logit_a, true = _process_one_batch(unl_data, assistant)
         logit_a.require_grad = False
         logit_s, true = _process_one_batch(unl_data, student)
         loss_s1 = cus_loss(logit_s, logit_a.detach())
