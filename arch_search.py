@@ -141,6 +141,7 @@ def main():
     args.s_layers = [int(s_l) for s_l in args.s_layers.replace(' ', '').split(',')]
     args.detail_freq = args.freq
     args.freq = args.freq[-1:]
+    mses, maes = [], []
 
     for i in range(args.itr):
         teacher = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
@@ -175,6 +176,7 @@ def main():
         STAT_arch = []
         STAT_arch_grad = []
         STAT_arch_std = []
+
 
         for epoch in range(args.epochs):
             logging.info('epoch %d', epoch)
@@ -211,7 +213,10 @@ def main():
             np.save(args.path + '/' + 'arch_mean{}.npy'.format(i), torch.tensor(STAT_arch_grad).cpu().numpy())
         best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
         teacher.load_state_dict(torch.load(best_model_path))
-        test(teacher)
+        mse, mae = test(teacher)
+        mses.append(mse)
+        maes.append(mae)
+    logging.info('MSE Final {}    MAE Final {}'.format(torch.tensor(mses).mean(), torch.tensor(maes).mean()))
 
 
 def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
@@ -236,9 +241,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
 
-        STAT_arch_grad.append(implicit_grads[0].mean().item())
+        # STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
         STAT_arch_std.append(teacher.architect_param123.std().item())
 
@@ -315,13 +320,13 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         loss_a2 = criterion_a(logit_a, true)
 
         loss_a = loss_a1 + args.lambda_par * loss_a2
-        loss_a.backward()
+        loss_a2.backward()
         optimizer_a.step()
 
         ##########################################################################################################
 
         optimizer_s.zero_grad()
-        logit_a, true = _process_one_batch(unl_data, assistant)
+        logit_a, true = _process_one_batch(unl_data, teacher)
         logit_a.require_grad = False
         logit_s, true = _process_one_batch(unl_data, student)
         loss_s1 = cus_loss(logit_s, logit_a.detach())
@@ -384,7 +389,7 @@ def test(teacher, message=''):
     np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
     np.save(folder_path + 'pred.npy', preds)
     np.save(folder_path + 'true.npy', trues)
-    return
+    return mse, mae
 
 
 def vali(vali_loader, criterion, model):
