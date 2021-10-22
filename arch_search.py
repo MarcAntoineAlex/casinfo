@@ -340,7 +340,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         ##########################################################################################################
 
-        logit_s, true = _process_one_batch(unl_data, student)
+        logit_s, true = _process_one_batch(unl_data, teacher)
         logit_s.require_grad = False
         logit_t, true = _process_one_batch(unl_data, teacher)
         loss_t2 = cus_loss(logit_t, logit_s.detach())
