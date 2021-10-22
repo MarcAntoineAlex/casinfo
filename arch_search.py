@@ -216,6 +216,7 @@ def main():
         mse, mae = test(teacher)
         mses.append(mse)
         maes.append(mae)
+        args.lambda_par += 0.1
     logging.info('MSE Final {}    MAE Final {}'.format(torch.tensor(mses).mean(), torch.tensor(maes).mean()))
 
 
