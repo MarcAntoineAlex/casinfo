@@ -248,61 +248,6 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         STAT_arch.append(teacher.architect_param123.mean().item())
         STAT_arch_std.append(teacher.architect_param123.std().item())
 
-        #
-        # optimizer_t.zero_grad()
-        # optimizer_a.zero_grad()
-        # optimizer_s.zero_grad()
-        #
-        # models = [teacher, assistant, student]
-        #
-        # logit_t, true = _process_one_batch(trn_data, teacher)
-        # logit_a, _ = _process_one_batch(trn_data, assistant)
-        # logit_s, _ = _process_one_batch(trn_data, student)
-        #
-        # loss1 = criterion_t(logit_t, true)
-        # loss2 = criterion_a(logit_a, true)
-        # loss3 = criterion_s(logit_s, true)
-        #
-        # logit_tu, trueu = _process_one_batch(unl_data, teacher)
-        # logit_au, _ = _process_one_batch(unl_data, assistant)
-        # logit_su, _ = _process_one_batch(unl_data, student)
-        #
-        # loss12 = cus_loss(logit_tu, logit_au)
-        # loss13 = cus_loss(logit_tu, logit_su)
-        # loss23 = cus_loss(logit_au, logit_su)
-        #
-        # if loss1 <= loss2:
-        #     if loss1 <= loss3:
-        #         loss1.backward()
-        #         optimizer_t.step()
-        #         (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_tu, requires_grad=False))).backward()
-        #         optimizer_a.step()
-        #         (loss3 + args.lambda_par * cus_loss(logit_su, torch.tensor(logit_tu, requires_grad=False))).backward()
-        #         optimizer_s.step()
-        #     else:
-        #         loss3.backward()
-        #         optimizer_s.step()
-        #         (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_su, requires_grad=False))).backward()
-        #         optimizer_t.step()
-        #         (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_su, requires_grad=False))).backward()
-        #         optimizer_a.step()
-        # else:
-        #     if loss2 <= loss3:
-        #         loss2.backward()
-        #         optimizer_a.step()
-        #         (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_au, requires_grad=False))).backward()
-        #         optimizer_t.step()
-        #         (loss3 + args.lambda_par * cus_loss(logit_su, torch.tensor(logit_au, requires_grad=False))).backward()
-        #         optimizer_s.step()
-        #     else:
-        #         loss3.backward()
-        #         optimizer_s.step()
-        #         (loss1 + args.lambda_par * cus_loss(logit_tu, torch.tensor(logit_su, requires_grad=False))).backward()
-        #         optimizer_t.step()
-        #         (loss2 + args.lambda_par * cus_loss(logit_au, torch.tensor(logit_su, requires_grad=False))).backward()
-        #         optimizer_a.step()
-
-
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
         # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
@@ -313,8 +258,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         ##########################################################################################################
 
         optimizer_a.zero_grad()
+        teacher.eval()
         logit_t, _ = _process_one_batch(unl_data, teacher)
-        logit_t.require_grad = False
+        teacher.train()
         logit_a, _ = _process_one_batch(unl_data, assistant)
         loss_a1 = cus_loss(logit_a, logit_t)
 
@@ -328,8 +274,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         ##########################################################################################################
 
         optimizer_s.zero_grad()
+        assistant.eval()
         logit_a, true = _process_one_batch(unl_data, assistant)
-        logit_a.require_grad = False
+        assistant.train()
         logit_s, true = _process_one_batch(unl_data, student)
         loss_s1 = cus_loss(logit_s, logit_a.detach())
 
