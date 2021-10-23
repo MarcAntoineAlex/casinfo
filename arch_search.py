@@ -242,9 +242,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
 
-        # STAT_arch_grad.append(implicit_grads[0].mean().item())
+        STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
         STAT_arch_std.append(teacher.architect_param123.std().item())
 
@@ -305,9 +305,10 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
         optimizer_t.zero_grad()
         logit_t, true = _process_one_batch(trn_data, teacher)
-        loss_t1 = critere(criterion_t, teacher, logit_t, true, data_count)
-        # loss_t = criterion_t(logit_t, true)
-
+        # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
+        loss_t = criterion_t(logit_t, true)
+        loss_t.backward()
+        optimizer_t.step()
 
         ##########################################################################################################
 
@@ -340,14 +341,6 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         optimizer_s.step()
 
         ##########################################################################################################
-
-        logit_s, true = _process_one_batch(unl_data, student)
-        logit_s.require_grad = False
-        logit_t, true = _process_one_batch(unl_data, teacher)
-        loss_t2 = cus_loss(logit_t, logit_s.detach())
-        loss_t = loss_t1 + loss_t2
-        loss_t1.backward()
-        optimizer_t.step()
 
         if step % args.report_freq == 0:
             logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss_t.item()))
