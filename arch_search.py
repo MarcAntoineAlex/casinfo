@@ -242,7 +242,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
+        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count)
 
         # STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
@@ -252,7 +252,8 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         logit_t, true = _process_one_batch(trn_data, teacher)
         # loss_t = critere(criterion_t, teacher, logit_t, true, data_count)
         loss_t = criterion_t(logit_t, true)
-
+        loss_t.backward()
+        optimizer_t.step()
 
         ##########################################################################################################
 
@@ -287,9 +288,6 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         optimizer_s.step()
 
         ##########################################################################################################
-
-        loss_t.backward()
-        optimizer_t.step()
 
         if step % args.report_freq == 0:
             logging.info("\tstep: {}, epoch: {} | loss: {:.7f}".format(step, epoch, loss_t.item()))
