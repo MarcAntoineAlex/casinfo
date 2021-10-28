@@ -141,7 +141,7 @@ def main():
     args.s_layers = [int(s_l) for s_l in args.s_layers.replace(' ', '').split(',')]
     args.detail_freq = args.freq
     args.freq = args.freq[-1:]
-    mses, maes = [], []
+    mses, maes = [[],[],[]], [[],[],[]]
 
     for i in range(args.itr):
         teacher = Informer(args.enc_in, args.dec_in, args.c_out, args.seq_len, args.label_len, args.pred_len, args.factor,
@@ -171,7 +171,7 @@ def main():
         test_data, test_loader = _get_data(flag='test')
 
         architect = Architect(teacher, assistant, student, args, device)
-        early_stopping = EarlyStopping(patience=args.patience, verbose=True)
+        early_stopping = [EarlyStopping(patience=args.patience, verbose=True) for _ in range(3)]
 
         STAT_arch = []
         STAT_arch_grad = []
@@ -187,37 +187,48 @@ def main():
                   optimizer_t, optimizer_a, optimizer_s, args.learning_rate, epoch, early_stopping, i, STAT_arch, STAT_arch_grad, STAT_arch_std)  # todo: learning_rate ->lr
 
             # validation
-            test(student, 'student')
-            test(teacher, 'teacher')
-            test(assistant, 'assistant')
+            test(teacher, 'teacher:')
+            test(assistant, 'assistant:')
+            test(student, 'student:')
 
             adjust_learning_rate(optimizer_t, epoch + 1, args)
             adjust_learning_rate(optimizer_a, epoch + 1, args)
             adjust_learning_rate(optimizer_s, epoch + 1, args)
-            if early_stopping.early_stop:
+            if early_stopping[0].early_stop and early_stopping[1].early_stop and early_stopping[2].early_stop:
                 print("EARLY_stopping")
                 break
 
-            plt.figure()
-            plt.subplot(211)
-            plt.plot(STAT_arch)
-            plt.title('arch_parameters mean')
-            plt.xlabel('step')
-            plt.subplot(212)
-            plt.plot(STAT_arch_std)
-            plt.title('arch_parameters std')
-            plt.xlabel('step')
-            plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
+            # plt.figure()
+            # plt.subplot(211)
+            # plt.plot(STAT_arch)
+            # plt.title('arch_parameters mean')
+            # plt.xlabel('step')
+            # plt.subplot(212)
+            # plt.plot(STAT_arch_std)
+            # plt.title('arch_parameters std')
+            # plt.xlabel('step')
+            # plt.savefig(args.path + '/' + 'arch{}.jpg'.format(i))
+            #
+            # np.save(args.path + '/' + 'arch{}.npy'.format(i), teacher.architect_param123.detach().squeeze().cpu().numpy())
+            # np.save(args.path + '/' + 'arch_mean{}.npy'.format(i), torch.tensor(STAT_arch_grad).cpu().numpy())
+        best_teacher_path = args.path + '/teacher/' + 'checkpoint.pth'
+        best_assistant_path = args.path + '/assistant/' + 'checkpoint.pth'
+        best_student_path = args.path + '/student/' + 'checkpoint.pth'
+        teacher.load_state_dict(torch.load(best_teacher_path))
+        assistant.load_state_dict(torch.load(best_assistant_path))
+        student.load_state_dict(torch.load(best_student_path))
 
-            np.save(args.path + '/' + 'arch{}.npy'.format(i), teacher.architect_param123.detach().squeeze().cpu().numpy())
-            np.save(args.path + '/' + 'arch_mean{}.npy'.format(i), torch.tensor(STAT_arch_grad).cpu().numpy())
-        best_model_path = args.path + '/' + 'checkpoint{}.pth'.format(i)
-        teacher.load_state_dict(torch.load(best_model_path))
-        mse, mae = test(teacher)
-        mses.append(mse)
-        maes.append(mae)
-        args.lambda_par += 0.1
-    logging.info('MSE Final {}    MAE Final {}'.format(torch.tensor(mses).mean(), torch.tensor(maes).mean()))
+        mse_t, mae_t = test(teacher)
+        mse_a, mae_a = test(assistant)
+        mse_s, mae_s = test(student)
+        mses[0].append(mse_t)
+        maes[0].append(mae_t)
+        mses[1].append(mse_a)
+        maes[1].append(mae_a)
+        mses[2].append(mse_s)
+        maes[2].append(mae_s)
+        # args.lambda_par += 0.1
+    logging.info('MSE Final {}    MAE Final {}'.format(torch.tensor(mses).mean(dim=-1), torch.tensor(maes).mean(dim=-1)))
 
 
 def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, student, architect,
@@ -267,7 +278,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         logit_a, true = _process_one_batch(trn_data, assistant)
         loss_a2 = criterion_a(logit_a, true)
 
-        loss_a = loss_a1 + args.lambda_par * loss_a2
+        loss_a = args.lambda_par * loss_a1 + loss_a2
         loss_a.backward()
         optimizer_a.step()
 
@@ -283,7 +294,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
         logit_s, true = _process_one_batch(trn_data, student)
         loss_s2 = criterion_s(logit_s, true)
 
-        loss_s = loss_s1 + args.lambda_par * loss_s2
+        loss_s = args.lambda_par * loss_s1 + loss_s2
         loss_s.backward()
         optimizer_s.step()
 
@@ -294,14 +305,16 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             loss_counter.update(loss_t.item())
         data_count += args.batch_size
 
-    vali_loss = vali(val_loader, criterion_t, teacher)
+    vali_loss_t = vali(val_loader, criterion_t, teacher)
     vali_loss_a = vali(val_loader, criterion_a, assistant)
     vali_loss_s = vali(val_loader, criterion_s, student)
     test_loss = vali(test_loader, criterion_t, teacher)
 
     logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} Assis_val Loss: {:.7f} Stud_val Loss: {:.7f}".format(
-        epoch, loss_counter.avg, vali_loss, test_loss, vali_loss_a, vali_loss_s))
-    early_stopping(vali_loss_s, student, args.path, i)  # todo: check teacher or student
+        epoch, loss_counter.avg, vali_loss_t, test_loss, vali_loss_a, vali_loss_s))
+    early_stopping[0](vali_loss_t, teacher, args.path+'/teacher')
+    early_stopping[1](vali_loss_a, assistant, args.path+'/assistant')
+    early_stopping[2](vali_loss_s, student, args.path+'/student')
 
 
 def test(teacher, message=''):
