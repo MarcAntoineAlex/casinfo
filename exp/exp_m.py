@@ -131,8 +131,7 @@ class Exp_M_Informer(Exp_Basic):
         self.model.eval()
         total_loss = []
         for i, val_d in enumerate(vali_loader):
-            pred, true = self._process_one_batch(
-                vali_data, val_d)
+            pred, true = self._process_one_batch(vali_data, val_d)
             loss = criterion(pred.detach().cpu(), true.detach().cpu())
             total_loss.append(loss)
         total_loss = np.average(total_loss)

@@ -124,7 +124,7 @@ class Architect(object):
         return implicit_grads
 
     def step_all3(self, trn_data, val_data, unl_data, eta, teacher_optimizer,
-                  assistant_optimizer, student_optimizer, unrolled, data_count):
+                  assistant_optimizer, student_optimizer, unrolled, data_count, print_grad=False):
         self.optimizer.zero_grad()
 
         ig1 = self.step(trn_data, val_data, unl_data, eta, teacher_optimizer,
@@ -133,7 +133,13 @@ class Architect(object):
                          assistant_optimizer, unrolled, data_count)
         ig3 = self.step2(trn_data, val_data, unl_data, eta, teacher_optimizer,
                          assistant_optimizer, student_optimizer, unrolled, data_count)
-        # print('ig1', ig1, ig1[0].mean(), 'ig2', ig2, ig2[0].mean(), 'ig3', ig3, ig3[0].mean())
+        if print_grad:
+            G1, G2, G3 = [], [], []
+            for g1, g2, g3 in zip(ig1, ig2, ig3):
+                G1.append(g1.norm())
+                G2.append(g2.norm())
+                G3.append(g3.norm())
+            print('ig1\n', G1, 'ig2\n', G2, 'ig3', G3)
         implicit_grads = [(x + y + z) for x, y, z in zip(ig1, ig2, ig3)]
 
         for v, g in zip(self.teacher.A(), implicit_grads):
