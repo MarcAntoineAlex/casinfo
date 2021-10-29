@@ -139,7 +139,7 @@ class Architect(object):
                 G1.append(g1.norm())
                 G2.append(g2.norm())
                 G3.append(g3.norm())
-            print('ig1\n', G1, 'ig2\n', G2, 'ig3', G3)
+            print('ig1\n', G1, '\nig2\n', G2, '\nig3', G3)
         implicit_grads = [(x + y + z) for x, y, z in zip(ig1, ig2, ig3)]
 
         for v, g in zip(self.teacher.A(), implicit_grads):

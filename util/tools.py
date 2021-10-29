@@ -32,7 +32,7 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, verbose=False, delta=0, rank=None):
+    def __init__(self, patience=7, verbose=False, delta=0, rank=None, tag=''):
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
@@ -41,7 +41,7 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
         self.rank = rank
-
+        self.tag = tag
     def __call__(self, val_loss, model, path):
         if self.early_stop:
             return
@@ -65,7 +65,7 @@ class EarlyStopping:
         if self.rank is not None:
             torch.save(model.state_dict(), path + '/' + '{}_checkpoint.pth'.format(self.rank))
         else:
-            torch.save(model.state_dict(), path+'/'+'checkpoint.pth')
+            torch.save(model.state_dict(), path+'/'+'checkpoint{}.pth'.format(self.tag))
         self.val_loss_min = val_loss
 
 class dotdict(dict):

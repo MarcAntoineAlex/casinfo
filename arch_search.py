@@ -171,7 +171,7 @@ def main():
         test_data, test_loader = _get_data(flag='test')
 
         architect = Architect(teacher, assistant, student, args, device)
-        early_stopping = [EarlyStopping(patience=args.patience, verbose=True) for _ in range(3)]
+        early_stopping = [EarlyStopping(patience=args.patience, verbose=True, tag=i) for i in range(3)]
 
         STAT_arch = []
         STAT_arch_grad = []
@@ -211,9 +211,9 @@ def main():
             #
             # np.save(args.path + '/' + 'arch{}.npy'.format(i), teacher.architect_param123.detach().squeeze().cpu().numpy())
             # np.save(args.path + '/' + 'arch_mean{}.npy'.format(i), torch.tensor(STAT_arch_grad).cpu().numpy())
-        best_teacher_path = args.path + '/teacher/' + 'checkpoint.pth'
-        best_assistant_path = args.path + '/assistant/' + 'checkpoint.pth'
-        best_student_path = args.path + '/student/' + 'checkpoint.pth'
+        best_teacher_path = args.path + 'checkpoint0.pth'
+        best_assistant_path = args.path + 'checkpoint1.pth'
+        best_student_path = args.path + 'checkpoint2.pth'
         teacher.load_state_dict(torch.load(best_teacher_path))
         assistant.load_state_dict(torch.load(best_assistant_path))
         student.load_state_dict(torch.load(best_student_path))
