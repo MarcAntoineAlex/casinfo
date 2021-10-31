@@ -312,9 +312,9 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
 
     logging.info("Epoch: {} | Train Loss: {:.7f} Vali Loss: {:.7f} Test Loss: {:.7f} Assis_val Loss: {:.7f} Stud_val Loss: {:.7f}".format(
         epoch, loss_counter.avg, vali_loss_t, test_loss, vali_loss_a, vali_loss_s))
-    early_stopping[0](vali_loss_t, teacher, args.path+'/teacher')
-    early_stopping[1](vali_loss_a, assistant, args.path+'/assistant')
-    early_stopping[2](vali_loss_s, student, args.path+'/student')
+    early_stopping[0](vali_loss_t, teacher, args.path)
+    early_stopping[1](vali_loss_a, assistant, args.path)
+    early_stopping[2](vali_loss_s, student, args.path)
 
 
 def test(teacher, message=''):
