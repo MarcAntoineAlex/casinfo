@@ -252,7 +252,7 @@ class Architect(object):
         loss2 = self.criterion(logits1, logits2)
 
         vector_t_dash = torch.autograd.grad(loss2, unrolled_model.W())
-        grad_part2 = self._hessian_vector_product(vector_t_dash, trn_data, data_count, r)
+        grad_part2 = self._hessian_vector_product (vector_t_dash, trn_data, data_count, r)
 
         for p, v in zip(self.assistant.W(), vector_s_dash):
             p.data.add_(R1, v)

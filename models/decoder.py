@@ -35,6 +35,7 @@ class DecoderLayer(nn.Module):
 
         return self.norm3(x+y)
 
+
 class Decoder(nn.Module):
     def __init__(self, layers, norm_layer=None):
         super(Decoder, self).__init__()

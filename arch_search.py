@@ -161,9 +161,9 @@ def main():
         criterion_s = nn.MSELoss().cuda()
         cus_loss = nn.MSELoss().cuda()
 
-        optimizer_t = torch.optim.Adam(teacher.W(), args.learning_rate)
-        optimizer_a = torch.optim.Adam(assistant.W(), args.learning_rate)
-        optimizer_s = torch.optim.Adam(student.W(), args.learning_rate)
+        optimizer_t = torch.optim.Adam(teacher.W(), 0.00005, weight_decay=1e-2)
+        optimizer_a = torch.optim.Adam(assistant.W(), 0.00005, weight_decay=1e-2)
+        optimizer_s = torch.optim.Adam(student.W(), 0.00005, weight_decay=1e-2)
 
         trn_data, trn_loader = _get_data(flag='train')
         val_data, val_loader = _get_data(flag='val')
@@ -191,9 +191,9 @@ def main():
             test(assistant, 'assistant:')
             test(student, 'student:')
 
-            adjust_learning_rate(optimizer_t, epoch + 1, args)
-            adjust_learning_rate(optimizer_a, epoch + 1, args)
-            adjust_learning_rate(optimizer_s, epoch + 1, args)
+            # adjust_learning_rate(optimizer_t, epoch + 1, args)
+            # adjust_learning_rate(optimizer_a, epoch + 1, args)
+            # adjust_learning_rate(optimizer_s, epoch + 1, args)
             if early_stopping[0].early_stop and early_stopping[1].early_stop and early_stopping[2].early_stop:
                 print("EARLY_stopping")
                 break
@@ -253,7 +253,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count, step%40==0)
+        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count, step%40==0)
 
         # STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
