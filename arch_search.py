@@ -253,7 +253,7 @@ def train(trn_loader, val_loader, unl_loader, test_loader, teacher, assistant, s
             unl_iter = iter(unl_loader)
             unl_data = next(unl_iter)
 
-        # implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count, step%40==0)
+        implicit_grads = architect.step_all3(trn_data, val_data, unl_data, lr, optimizer_t, optimizer_a, optimizer_s, args.unrolled, data_count, step%40==0)
 
         # STAT_arch_grad.append(implicit_grads[0].mean().item())
         STAT_arch.append(teacher.architect_param123.mean().item())
